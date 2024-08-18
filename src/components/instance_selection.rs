@@ -38,6 +38,9 @@ impl InstanceSelection {
 
     pub fn update_instances(&mut self, instances: Vec<InstanceInfo>) {
         self.instances_table_component = InstanceTable::with_items_and_filter(instances, self.search_component.get_value());
+        if let Some(instance) = self.instances_table_component.current() {
+            self.instance_details.set_instance(instance);
+        }
     }
 }
 
@@ -80,6 +83,10 @@ impl HandleAction for InstanceSelection {
                 }
                 Action::ToggleInfoPanel => {
                     self.info_panel_enabled = !self.info_panel_enabled;
+                    Action::Noop
+                }
+                Action::Select(item) => {
+                    self.instance_details.set_instance(item);
                     Action::Noop
                 }
                 other => other

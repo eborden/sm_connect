@@ -39,12 +39,9 @@ pub enum RuntimeError {
 #[derive(Debug, Clone)]
 pub struct App {
     config: config::Config,
-    info_panel_enabled: bool,
     region_select_component: RegionList,
     search_component: TextInput,
     status: AppStatus,
-    instances_table_component: InstanceTable,
-    search_enabled: bool,
     info_panel_component: InstanceDetails,
     instance_selection_component: InstanceSelection,
 }
@@ -59,10 +56,7 @@ impl App {
             search_component: TextInput::default(),
             region_select_component: region_select,
             status: AppStatus::RegionSelectState,
-            instances_table_component: InstanceTable::with_items(vec![]),
-            info_panel_enabled: false,
             info_panel_component: InstanceDetails::default(),
-            search_enabled: false,
             instance_selection_component: InstanceSelection::default(),
         }
     }
@@ -83,7 +77,6 @@ impl App {
                     match self.status {
                         AppStatus::RegionSelectState => {
                             self.region_select_component.render(frame, outer_layout[1]);
-                            //self.region_select_component.render_help(frame, outer_layout[2]);
                         }
                         AppStatus::MainScreen => {
                             self.instance_selection_component.render(frame, outer_layout[1]);
@@ -182,15 +175,15 @@ impl App {
         outer
     }
 
-    fn get_inner_layout(&self, frame: &mut Frame, outer_layout: &Rc<[Rect]>) -> Rc<[Rect]> {
-        let inner_layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(if self.info_panel_enabled {
-                vec![Constraint::Percentage(75), Constraint::Percentage(25)]
-            } else {
-                vec![Constraint::Percentage(100), Constraint::Percentage(0)]
-            })
-            .split(outer_layout[1]);
-        inner_layout
-    }
+    // fn get_inner_layout(&self, frame: &mut Frame, outer_layout: &Rc<[Rect]>) -> Rc<[Rect]> {
+    //     let inner_layout = Layout::default()
+    //         .direction(Direction::Horizontal)
+    //         .constraints(if self.info_panel_enabled {
+    //             vec![Constraint::Percentage(75), Constraint::Percentage(25)]
+    //         } else {
+    //             vec![Constraint::Percentage(100), Constraint::Percentage(0)]
+    //         })
+    //         .split(outer_layout[1]);
+    //     inner_layout
+    // }
 }
