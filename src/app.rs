@@ -7,6 +7,8 @@ use crate::components::text_input::TextInput;
 use crate::components::RenderHelp;
 use crate::components::{Action, HandleAction, Render};
 
+use crate::components::instance_selection::InstanceSelection;
+
 use aws_config::Region;
 use crossterm::event::{self};
 
@@ -44,6 +46,7 @@ pub struct App {
     instances_table_component: InstanceTable,
     search_enabled: bool,
     info_panel_component: InstanceDetails,
+    instance_selection_component: InstanceSelection,
 }
 
 impl App {
@@ -60,6 +63,7 @@ impl App {
             info_panel_enabled: false,
             info_panel_component: InstanceDetails::default(),
             search_enabled: false,
+            instance_selection_component: InstanceSelection::default(),
         }
     }
 
@@ -75,26 +79,14 @@ impl App {
                 .draw(|frame| {
                     // Set global layout
                     let outer_layout = self.get_outer_layout(frame);
-                    let inner_layout = self.get_inner_layout(frame, &outer_layout);
-                    
+
                     match self.status {
                         AppStatus::RegionSelectState => {
-                            self.region_select_component.render(frame, inner_layout[0]);
-                            self.region_select_component.render_help(frame, outer_layout[2]);
+                            self.region_select_component.render(frame, outer_layout[1]);
+                            //self.region_select_component.render_help(frame, outer_layout[2]);
                         }
                         AppStatus::MainScreen => {
-                            self.instances_table_component.render(frame, inner_layout[0]);
-                            self.info_panel_component.render(frame, inner_layout[1]);
-                            if self.search_enabled {
-                                self.search_component.render(frame, outer_layout[2]);
-                                frame.set_cursor(
-                                    outer_layout[2].x
-                                        + self.search_component.get_cursor_position() as u16,
-                                    outer_layout[2].y,
-                                );
-                            } else {
-                                self.instances_table_component.render_help(frame, outer_layout[2])
-                            }
+                            self.instance_selection_component.render(frame, outer_layout[1]);
                         }
                     }
                 })
@@ -114,9 +106,7 @@ impl App {
                             let mut instances = fetch_instances(Region::new(region)).await?;
                             instances
                                 .sort_by_key(|instance_info| instance_info.get_name().to_owned());
-                            let search_input = self.search_component.get_value();
-
-                            self.instances_table_component = InstanceTable::with_items_and_filter(instances, search_input);
+                            self.instance_selection_component.update_instances(instances);
                             
                         }
                         Action::Hide(region) => {
@@ -138,56 +128,21 @@ impl App {
                     }
                 }
                 AppStatus::MainScreen => {
-                    if self.search_enabled {
-                        let action = self.search_component.handle_action(event);
-                        match action {
-                            Action::Exit => {
-                                self.search_enabled = false;
-                            }
-                            Action::Return(search) => {
-                                self.instances_table_component.apply_filter(search);
-                                self.search_enabled = false;
-                            }
-                            Action::PartialReturn(search) => {
-                                self.instances_table_component.apply_filter(search);
-                            }
-                            Action::ReturnWithKey(key) => {
-                                match key {
-                                    event::KeyCode::Up => {
-                                        self.instances_table_component.previous();
-                                    }
-                                    event::KeyCode::Down => {
-                                        self.instances_table_component.next();
-                                    }
-                                    _ => {}
-                                }
-                                self.search_enabled = false;
-                            }
-                            _ => {}
+                    let action = self.instance_selection_component.handle_action(event);
+                    match action {
+                        Action::Exit => {
+                            self.status = AppStatus::RegionSelectState;
                         }
-                    } else {
-                        let action = self
-                            .instances_table_component.handle_action(event);
-                        match action {
-                            Action::Exit => {
-                                self.status = AppStatus::RegionSelectState;
-                            }
-                            Action::ReturnInstance(instance) => {
-                                should_exit = true;
-                                return_value = Some(instance);
-                            }
-                            Action::Search => {
-                                self.search_enabled = true;
-                            }
-                            Action::ToggleInfoPanel => {
-                                self.info_panel_enabled = !self.info_panel_enabled;
-                            }
-                            Action::Select(instance) => {
-                                self.info_panel_component.set_instance(instance);
-                            }
-                            _ => {}
+                        Action::ReturnInstance(instance) => {
+                            should_exit = true;
+                            return_value = Some(instance);
                         }
+                        Action::Select(instance) => {
+                            self.info_panel_component.set_instance(instance);
+                        }
+                        _ => {}
                     }
+                    
                 }
             }
 
@@ -208,8 +163,7 @@ impl App {
         .constraints(
             [
                 Constraint::Percentage(10),
-                Constraint::Percentage(95),
-                Constraint::Percentage(5),
+                Constraint::Percentage(90),
             ]
             .as_ref(),
         )

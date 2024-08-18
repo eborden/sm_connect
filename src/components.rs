@@ -1,5 +1,6 @@
 pub mod instance_details;
 pub mod instance_table;
+pub mod instance_selection;
 pub mod region_list;
 pub mod text_input;
 use crossterm::event::{Event, KeyCode};
