@@ -1,10 +1,7 @@
 use crate::aws::fetch_instances;
 use crate::aws::InstanceInfo;
 use crate::components::instance_details::InstanceDetails;
-use crate::components::instance_table::InstanceTable;
 use crate::components::region_list::RegionList;
-use crate::components::text_input::TextInput;
-use crate::components::RenderHelp;
 use crate::components::{Action, HandleAction, Render};
 
 use crate::components::instance_selection::InstanceSelection;
@@ -12,12 +9,10 @@ use crate::components::instance_selection::InstanceSelection;
 use aws_config::Region;
 use crossterm::event::{self};
 
-use ratatui::style::{Color, Style};
-use ratatui::text::Span;
+use ratatui::style::Style;
 use ratatui::{prelude::*, widgets::*};
 
 use std::io::Stdout;
-use std::rc::Rc;
 
 use anyhow::Result;
 use thiserror::Error;
@@ -40,7 +35,6 @@ pub enum RuntimeError {
 pub struct App {
     config: config::Config,
     region_select_component: RegionList,
-    search_component: TextInput,
     status: AppStatus,
     info_panel_component: InstanceDetails,
     instance_selection_component: InstanceSelection,
@@ -53,7 +47,6 @@ impl App {
         region_select.set_favorites(config.get_favorite_regions());
         App {
             config: config.clone(),
-            search_component: TextInput::default(),
             region_select_component: region_select,
             status: AppStatus::RegionSelectState,
             info_panel_component: InstanceDetails::default(),
@@ -69,21 +62,20 @@ impl App {
         let mut return_value: Option<InstanceInfo> = None;
         loop {
             // render
-            terminal
-                .draw(|frame| {
+            terminal.draw(|frame| {
                     // Set global layout
-                    let outer_layout = self.get_outer_layout(frame);
+                    let render_area = self.get_component_render_area(frame);
 
                     match self.status {
                         AppStatus::RegionSelectState => {
-                            self.region_select_component.render(frame, outer_layout[1]);
+                            self.region_select_component.render(frame, render_area);
                         }
                         AppStatus::MainScreen => {
-                            self.instance_selection_component.render(frame, outer_layout[1]);
+                            self.instance_selection_component.render(frame, render_area);
                         }
                     }
-                })
-                .unwrap();
+                }
+            ).unwrap();
 
             // handle events
             let event = event::read().unwrap();
@@ -149,7 +141,11 @@ impl App {
         }
     }
 
-    fn get_outer_layout(&self, frame: &mut Frame) -> Rc<[Rect]> {
+    
+    /**
+     * Creates the app layout and returns the area for components to render themselves
+     */
+    fn get_component_render_area(&self, frame: &mut Frame) -> Rect {
         let outer = Layout::default()
         .direction(Direction::Vertical)
         .margin(0)
@@ -170,20 +166,8 @@ impl App {
                 AppStatus::RegionSelectState => 0,
                 AppStatus::MainScreen => 1,
             });
-        //.divider(symbols::DOT);
         frame.render_widget(tabs, outer[0]);
-        outer
+        outer[1]
     }
 
-    // fn get_inner_layout(&self, frame: &mut Frame, outer_layout: &Rc<[Rect]>) -> Rc<[Rect]> {
-    //     let inner_layout = Layout::default()
-    //         .direction(Direction::Horizontal)
-    //         .constraints(if self.info_panel_enabled {
-    //             vec![Constraint::Percentage(75), Constraint::Percentage(25)]
-    //         } else {
-    //             vec![Constraint::Percentage(100), Constraint::Percentage(0)]
-    //         })
-    //         .split(outer_layout[1]);
-    //     inner_layout
-    // }
 }
