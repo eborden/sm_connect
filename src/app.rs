@@ -169,5 +169,4 @@ impl App {
         frame.render_widget(tabs, outer[0]);
         outer[1]
     }
-
 }
