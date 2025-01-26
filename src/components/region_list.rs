@@ -1,7 +1,7 @@
 use super::{Action, HandleAction, Render, RenderHelp, View};
 use crossterm::event::{Event, KeyCode};
 use ratatui::{
-    layout::{Constraint, Rect}, style::{Color, Modifier, Style}, text::Span, widgets::{Block, Borders, Cell, List, ListItem, ListState, Row, Table}, Frame
+    layout::{Constraint, Direction, Layout, Rect}, style::{Color, Modifier, Style}, text::Span, widgets::{Block, Borders, Cell, List, ListItem, ListState, Row, Table}, Frame
 };
 
 #[derive(Default, Debug, Clone)]
@@ -142,8 +142,14 @@ impl View for RegionList {
 
 impl Render for RegionList {
     fn render(&mut self, frame: &mut Frame, area: Rect) {
+        let vertical_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![Constraint::Percentage(90), Constraint::Percentage(10)])
+        .split(area);
+        
         let widget = self.get_widget();
-        frame.render_stateful_widget(widget, area, &mut self.state.clone());
+        frame.render_stateful_widget(widget, vertical_layout[0], &mut self.state.clone());
+        self.render_help(frame, vertical_layout[1]);
     }
 }
 

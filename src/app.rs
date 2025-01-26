@@ -1,20 +1,18 @@
 use crate::aws::fetch_instances;
 use crate::aws::InstanceInfo;
 use crate::components::instance_details::InstanceDetails;
-use crate::components::instance_table::InstanceTable;
 use crate::components::region_list::RegionList;
-use crate::components::text_input::TextInput;
-use crate::components::RenderHelp;
 use crate::components::{Action, HandleAction, Render};
+
+use crate::components::instance_selection::InstanceSelection;
 
 use aws_config::Region;
 use crossterm::event::{self};
 
-use ratatui::style::{Style};
+use ratatui::style::Style;
 use ratatui::{prelude::*, widgets::*};
 
 use std::io::Stdout;
-use std::rc::Rc;
 
 use anyhow::Result;
 use thiserror::Error;
@@ -36,13 +34,10 @@ pub enum RuntimeError {
 #[derive(Debug, Clone)]
 pub struct App {
     config: config::Config,
-    info_panel_enabled: bool,
     region_select_component: RegionList,
-    search_component: TextInput,
     status: AppStatus,
-    instances_table_component: InstanceTable,
-    search_enabled: bool,
     info_panel_component: InstanceDetails,
+    instance_selection_component: InstanceSelection,
 }
 
 impl App {
@@ -52,13 +47,10 @@ impl App {
         region_select.set_favorites(config.get_favorite_regions());
         App {
             config: config.clone(),
-            search_component: TextInput::default(),
             region_select_component: region_select,
             status: AppStatus::RegionSelectState,
-            instances_table_component: InstanceTable::with_items(vec![]),
-            info_panel_enabled: false,
             info_panel_component: InstanceDetails::default(),
-            search_enabled: false,
+            instance_selection_component: InstanceSelection::default(),
         }
     }
 
@@ -70,34 +62,20 @@ impl App {
         let mut return_value: Option<InstanceInfo> = None;
         loop {
             // render
-            terminal
-                .draw(|frame| {
+            terminal.draw(|frame| {
                     // Set global layout
-                    let outer_layout = self.get_outer_layout(frame);
-                    let inner_layout = self.get_inner_layout(frame, &outer_layout);
-                    
+                    let render_area = self.get_component_render_area(frame);
+
                     match self.status {
                         AppStatus::RegionSelectState => {
-                            self.region_select_component.render(frame, inner_layout[0]);
-                            self.region_select_component.render_help(frame, outer_layout[2]);
+                            self.region_select_component.render(frame, render_area);
                         }
                         AppStatus::MainScreen => {
-                            self.instances_table_component.render(frame, inner_layout[0]);
-                            self.info_panel_component.render(frame, inner_layout[1]);
-                            if self.search_enabled {
-                                self.search_component.render(frame, outer_layout[2]);
-                                frame.set_cursor(
-                                    outer_layout[2].x
-                                        + self.search_component.get_cursor_position() as u16,
-                                    outer_layout[2].y,
-                                );
-                            } else {
-                                self.instances_table_component.render_help(frame, outer_layout[2])
-                            }
+                            self.instance_selection_component.render(frame, render_area);
                         }
                     }
-                })
-                .unwrap();
+                }
+            ).unwrap();
 
             // handle events
             let event = event::read().unwrap();
@@ -113,9 +91,7 @@ impl App {
                             let mut instances = fetch_instances(Region::new(region)).await?;
                             instances
                                 .sort_by_key(|instance_info| instance_info.get_name().to_owned());
-                            let search_input = self.search_component.get_value();
-
-                            self.instances_table_component = InstanceTable::with_items_and_filter(instances, search_input);
+                            self.instance_selection_component.update_instances(instances);
                             
                         }
                         Action::Hide(region) => {
@@ -137,56 +113,21 @@ impl App {
                     }
                 }
                 AppStatus::MainScreen => {
-                    if self.search_enabled {
-                        let action = self.search_component.handle_action(event);
-                        match action {
-                            Action::Exit => {
-                                self.search_enabled = false;
-                            }
-                            Action::Return(search) => {
-                                self.instances_table_component.apply_filter(search);
-                                self.search_enabled = false;
-                            }
-                            Action::PartialReturn(search) => {
-                                self.instances_table_component.apply_filter(search);
-                            }
-                            Action::ReturnWithKey(key) => {
-                                match key {
-                                    event::KeyCode::Up => {
-                                        self.instances_table_component.previous();
-                                    }
-                                    event::KeyCode::Down => {
-                                        self.instances_table_component.next();
-                                    }
-                                    _ => {}
-                                }
-                                self.search_enabled = false;
-                            }
-                            _ => {}
+                    let action = self.instance_selection_component.handle_action(event);
+                    match action {
+                        Action::Exit => {
+                            self.status = AppStatus::RegionSelectState;
                         }
-                    } else {
-                        let action = self
-                            .instances_table_component.handle_action(event);
-                        match action {
-                            Action::Exit => {
-                                self.status = AppStatus::RegionSelectState;
-                            }
-                            Action::ReturnInstance(instance) => {
-                                should_exit = true;
-                                return_value = Some(instance);
-                            }
-                            Action::Search => {
-                                self.search_enabled = true;
-                            }
-                            Action::ToggleInfoPanel => {
-                                self.info_panel_enabled = !self.info_panel_enabled;
-                            }
-                            Action::Select(instance) => {
-                                self.info_panel_component.set_instance(instance);
-                            }
-                            _ => {}
+                        Action::ReturnInstance(instance) => {
+                            should_exit = true;
+                            return_value = Some(instance);
                         }
+                        Action::Select(instance) => {
+                            self.info_panel_component.set_instance(instance);
+                        }
+                        _ => {}
                     }
+                    
                 }
             }
 
@@ -200,19 +141,22 @@ impl App {
         }
     }
 
-    fn get_outer_layout(&self, frame: &mut Frame) -> Rc<[Rect]> {
+    
+    /**
+     * Creates the app layout and returns the area for components to render themselves
+     */
+    fn get_component_render_area(&self, frame: &mut Frame) -> Rect {
         let outer = Layout::default()
         .direction(Direction::Vertical)
         .margin(0)
         .constraints(
             [
                 Constraint::Percentage(10),
-                Constraint::Percentage(95),
-                Constraint::Percentage(5),
+                Constraint::Percentage(90),
             ]
             .as_ref(),
         )
-        .split(frame.size());
+        .split(frame.area());
 
         let tabs = Tabs::new(vec!["Region", "Instances", "Connection"])
             .block(Block::bordered())
@@ -222,20 +166,7 @@ impl App {
                 AppStatus::RegionSelectState => 0,
                 AppStatus::MainScreen => 1,
             });
-        //.divider(symbols::DOT);
         frame.render_widget(tabs, outer[0]);
-        outer
-    }
-
-    fn get_inner_layout(&self, _frame: &mut Frame, outer_layout: &Rc<[Rect]>) -> Rc<[Rect]> {
-        let inner_layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(if self.info_panel_enabled {
-                vec![Constraint::Percentage(75), Constraint::Percentage(25)]
-            } else {
-                vec![Constraint::Percentage(100), Constraint::Percentage(0)]
-            })
-            .split(outer_layout[1]);
-        inner_layout
+        outer[1]
     }
 }

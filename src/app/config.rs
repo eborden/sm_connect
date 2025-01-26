@@ -134,8 +134,11 @@ impl Config {
                 .filter(|r| r != &&region)
                 .map(|s| s.to_string())
                 .collect();
-            self.internal
-                .set("regions", "favorite", new_favs.join(",").to_string().into());
+            self.internal.set(
+                "regions",
+                "favorite",
+                new_favs.join(",").to_string().into(),
+            );
         }
     }
 
