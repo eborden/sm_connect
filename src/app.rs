@@ -156,7 +156,7 @@ impl App {
             ]
             .as_ref(),
         )
-        .split(frame.size());
+        .split(frame.area());
 
         let tabs = Tabs::new(vec!["Region", "Instances", "Connection"])
             .block(Block::bordered())

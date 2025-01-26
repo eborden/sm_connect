@@ -6,6 +6,8 @@ mod app;
 use app::App;
 use std::process::Command;
 mod components;
+mod history;
+use history::History;
 
 use anyhow::{Context, Result};
 use signal_hook::{consts::signal::*, iterator::Signals};

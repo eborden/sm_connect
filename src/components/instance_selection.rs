@@ -103,10 +103,10 @@ impl Render for InstanceSelection {
             .split(area);
         if self.search_active {
             self.search_component.render(frame, vertical_layout[1]);
-            frame.set_cursor(
-                vertical_layout[1].x
+            frame.set_cursor_position(
+                (vertical_layout[1].x
                     + self.search_component.get_cursor_position() as u16,
-                    vertical_layout[1].y,
+                    vertical_layout[1].y)
             );
         }else {
             self.instances_table_component.render_help(frame, vertical_layout[1]);

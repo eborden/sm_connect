@@ -147,7 +147,7 @@ impl View for InstanceTable {
         // Create a List from all list items and highlight the currently selected one
         Table::new(items, widths)
             .block(Block::default().borders(Borders::ALL))
-            .highlight_style(
+            .row_highlight_style(
                 Style::default()
                     .bg(Color::LightGreen)
                     .add_modifier(Modifier::BOLD),
