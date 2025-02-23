@@ -28,13 +28,10 @@ impl RegionList {
 
     pub fn update_items(&mut self, items: Vec<String>) {
         self.items = items;
-        match self.state.selected_mut() {
-            Some(i) => {
-                if *i >= self.items.len() {
-                    *i = self.items.len() - 1;
-                }
+        if let Some(i) = self.state.selected_mut() {
+            if *i >= self.items.len() {
+                *i = self.items.len() - 1;
             }
-            None => {}
         }
         self.sort_list();
     }

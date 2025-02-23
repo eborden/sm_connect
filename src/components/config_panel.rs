@@ -2,21 +2,18 @@ use std::sync::{Arc, Mutex};
 
 use crate::{
     app::config::Config,
-    aws::InstanceInfo,
-    components::{instance_table::InstanceTable, text_input::TextInput},
+    components::text_input::TextInput,
     history::History,
 };
 use config_list::{ConfigList, ConfigOption};
-use crossterm::event;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style, Stylize},
-    text::{Line, Span},
-    widgets::{Block, Borders, Cell, List, ListItem, ListState, Row, Table},
+    style::{Color, Stylize},
+    text::Line,
     Frame,
 };
 
-use super::{instance_details::InstanceDetails, Action, HandleAction, Render, RenderHelp};
+use super::{Action, HandleAction, Render, RenderHelp};
 pub mod config_list;
 
 #[derive(Debug)]
@@ -53,20 +50,17 @@ impl HandleAction for ConfigPanel {
                     self.input_active = false;
                 }
                 Action::Return(search) => {
-                    match self.modifying_action {
-                        Some(ConfigOption::SetRecentTimeout) => {
-                            if let Ok(timeout) = search.parse::<u64>() {
-                                self.config
-                                    .lock()
-                                    .unwrap()
-                                    .set_recent_timeout(timeout)
-                                    .unwrap();
-                                self.last_operation_success = Some(true);
-                            } else {
-                                self.last_operation_success = Some(false);
-                            }
+                    if let Some(ConfigOption::SetRecentTimeout) = self.modifying_action {
+                        if let Ok(timeout) = search.parse::<u64>() {
+                            self.config
+                                .lock()
+                                .unwrap()
+                                .set_recent_timeout(timeout)
+                                .unwrap();
+                            self.last_operation_success = Some(true);
+                        } else {
+                            self.last_operation_success = Some(false);
                         }
-                        _ => {}
                     }
                     self.input_active = false;
                 }

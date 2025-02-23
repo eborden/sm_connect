@@ -1,6 +1,5 @@
 use crate::aws::fetch_instances;
 use crate::aws::InstanceInfo;
-use crate::components::config_panel::config_list::ConfigOption;
 use crate::components::config_panel::ConfigPanel;
 use crate::components::instance_details::InstanceDetails;
 use crate::components::region_list::RegionList;
@@ -9,7 +8,6 @@ use crate::components::{Action, HandleAction, Render};
 use crate::components::instance_selection::InstanceSelection;
 
 use aws_config::Region;
-use config::Config;
 use crossterm::event::{self};
 
 use ratatui::style::Style;
@@ -150,11 +148,8 @@ impl App {
                 }
                 AppStatus::ConfigPanelState => {
                     let action = self.config_panel.handle_action(event);
-                    match action {
-                        Action::Exit => {
-                            self.status = AppStatus::RegionSelectState;
-                        }
-                        _ => {}
+                    if let Action::Exit = action {
+                        self.status = AppStatus::RegionSelectState;
                     }
                 }
             }
