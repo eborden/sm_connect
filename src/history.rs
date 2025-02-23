@@ -6,6 +6,8 @@ use serde::{Serialize, Deserialize};
 use serde_json::{from_str, to_string};
 use std::time::SystemTime;
 
+const RECENT_TIMEOUT: u64 = 60*60*24*30;
+
 pub fn get_current_time() -> u64{
     SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs()
 }
@@ -15,15 +17,13 @@ pub struct History {}
 #[derive(Debug,Serialize,Deserialize)]
 pub struct HistoryEntry {
     instance_id: String,
-    region: String,
     when: u64
 }
 
 impl HistoryEntry {
-    pub fn new(instance_id: String, region: String) -> HistoryEntry {
+    pub fn new(instance_id: String) -> HistoryEntry {
         HistoryEntry {
             instance_id,
-            region,
             when: get_current_time()
         }
     }
@@ -36,32 +36,28 @@ impl HistoryEntry {
         self.when
     }
 }
-
+// If we ever need to save the history and read it at the same time, we need to lock the file.
 impl History {
     pub fn save(entry: HistoryEntry) -> Result<()> {
-        let file = Self::get_history_path()?;
-        let mut file = std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(file)
-            .unwrap();
-        writeln!(file, "{}", to_string(&entry).unwrap()).unwrap();
-        file.flush()?;
-        Ok(())
+        let mut entries = Self::read()?;
+        entries.insert(entry.get_instance_id().to_string(), entry);
+        Self::write(&entries)
     }
 
     pub fn read() -> Result<HashMap<String,HistoryEntry>> {
-        //TOOD: Persist the deduplicated entries?
         let mut entries  = HashMap::new();
         let file = Self::get_history_path()?;
         let Ok(file) = std::fs::File::open(file) else {
             return Ok(entries);
         };
-        
+        let current_time = get_current_time();
         let reader = std::io::BufReader::new(file);
         for line in reader.lines() {
             let line = line?;
             let entry: HistoryEntry = from_str(&line)?;
+            if entry.when < current_time - RECENT_TIMEOUT {
+                continue;
+            }
             match entries.get_mut(entry.get_instance_id()) {
                 Some(existing) => {
                     if existing.when < entry.when {
@@ -74,6 +70,20 @@ impl History {
             }
         }
         Ok(entries)
+    }
+
+    fn write(entries: &HashMap<String,HistoryEntry>) -> Result<()> {
+        let file = Self::get_history_path()?;
+        let mut file = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(file)
+            .unwrap();
+        for entry in entries.values() {
+            writeln!(file, "{}", to_string(entry).unwrap())?;
+        }
+        file.flush()?;
+        Ok(())
     }
 
     fn get_history_path() -> Result<PathBuf> {

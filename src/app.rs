@@ -5,7 +5,6 @@ use crate::components::region_list::RegionList;
 use crate::components::{Action, HandleAction, Render};
 
 use crate::components::instance_selection::InstanceSelection;
-use crate::history::History;
 
 use aws_config::Region;
 use crossterm::event::{self};

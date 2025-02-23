@@ -100,16 +100,6 @@ impl InstanceInfo {
             .collect()
     }
 
-    pub fn is_recent(&self) -> bool {
-        match self.last_access {
-            None => false,
-            Some(time) => {
-                let now = get_current_time();
-                now - time < 60 * 60 * 24 * 7 //TODO: make this configurable
-            }
-        }
-    }
-
     pub fn get_last_access(&self) -> Option<u64> {
         self.last_access
     }

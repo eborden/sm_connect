@@ -34,7 +34,7 @@ async fn main() -> Result<()> {
 fn connect(instance: InstanceInfo) {
     // Run the AWS command
     // If fails, run SSH
-    let entry = HistoryEntry::new(instance.get_instance_id(), instance.get_region().to_string());
+    let entry = HistoryEntry::new(instance.get_instance_id());
     History::save(entry).unwrap();
     let mut child = Command::new("aws")
         .args([

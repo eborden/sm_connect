@@ -160,7 +160,7 @@ impl View for InstanceTable {
                     Cell::from(i.get_public_ip()),
                 ])
                 .style(
-                    if self.recent_first && i.is_recent(){
+                    if self.recent_first && i.get_last_access().is_some(){
                         Style::default().fg(Color::Yellow)
                     } else {
                         Style::default()
