@@ -1,7 +1,11 @@
 use super::{Action, HandleAction, Render, RenderHelp, View};
 use crossterm::event::{Event, KeyCode};
 use ratatui::{
-    layout::{Constraint, Direction, Layout, Rect}, style::{Color, Modifier, Style}, text::Span, widgets::{Block, Borders, Cell, List, ListItem, ListState, Row, Table}, Frame
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, Style},
+    text::Span,
+    widgets::{Block, Borders, Cell, List, ListItem, ListState, Row, Table},
+    Frame,
 };
 
 #[derive(Default, Debug, Clone)]
@@ -24,13 +28,10 @@ impl RegionList {
 
     pub fn update_items(&mut self, items: Vec<String>) {
         self.items = items;
-        match self.state.selected_mut() {
-            Some(i) => {
-                if *i >= self.items.len() {
-                    *i = self.items.len() - 1;
-                }
+        if let Some(i) = self.state.selected_mut() {
+            if *i >= self.items.len() {
+                *i = self.items.len() - 1;
             }
-            None => {}
         }
         self.sort_list();
     }
@@ -92,6 +93,7 @@ impl HandleAction for RegionList {
                 KeyCode::Char('q') => Action::Exit,
                 KeyCode::Char('h') => Action::Hide(self.current().unwrap()),
                 KeyCode::Char('r') => Action::Reset,
+                KeyCode::Char('c') => Action::OpenConfig,
                 KeyCode::Char('*') => Action::ToggleFavorite(self.current().unwrap()),
                 KeyCode::Down => {
                     self.next();
@@ -143,10 +145,10 @@ impl View for RegionList {
 impl Render for RegionList {
     fn render(&mut self, frame: &mut Frame, area: Rect) {
         let vertical_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Percentage(90), Constraint::Percentage(10)])
-        .split(area);
-        
+            .direction(Direction::Vertical)
+            .constraints(vec![Constraint::Percentage(90), Constraint::Percentage(10)])
+            .split(area);
+
         let widget = self.get_widget();
         frame.render_stateful_widget(widget, vertical_layout[0], &mut self.state.clone());
         self.render_help(frame, vertical_layout[1]);
@@ -156,14 +158,8 @@ impl Render for RegionList {
 impl RenderHelp for RegionList {
     fn render_help(&mut self, frame: &mut Frame, area: Rect) {
         let rows = vec![Row::new(vec![
-            Cell::from(Span::styled(
-                "'q' Exit",
-                Style::default().fg(Color::White),
-            )),
-            Cell::from(Span::styled(
-                "'h' Hide",
-                Style::default().fg(Color::White),
-            )),
+            Cell::from(Span::styled("'q' Exit", Style::default().fg(Color::White))),
+            Cell::from(Span::styled("'h' Hide", Style::default().fg(Color::White))),
             Cell::from(Span::styled(
                 "'r' Reset regions",
                 Style::default().fg(Color::White),

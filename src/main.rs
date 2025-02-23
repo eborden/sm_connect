@@ -15,7 +15,10 @@ use signal_hook::{consts::signal::*, iterator::Signals};
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut terminal = setup_terminal().context("setup failed")?;
-    let mut app = App::new();
+    let Ok(mut app) = App::new() else {
+        restore_terminal(&mut terminal).context("restore terminal failed")?;
+        return Ok(());
+    };
     let selected = app.run(&mut terminal).await;
 
     restore_terminal(&mut terminal).context("restore terminal failed")?;
@@ -56,6 +59,7 @@ fn connect(instance: InstanceInfo) {
 
     // Catch SIGINT signal and do nothing
     // So that actually ctrl+c works on the aws ssm session
+    // TODO: Handle ctrl+z too
     let mut _signals = Signals::new([SIGINT]).unwrap();
 
     child.wait().expect("failed to aws sm connect");

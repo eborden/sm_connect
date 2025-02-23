@@ -1,8 +1,10 @@
+pub mod config_panel;
 pub mod instance_details;
-pub mod instance_table;
 pub mod instance_selection;
+pub mod instance_table;
 pub mod region_list;
 pub mod text_input;
+use config_panel::config_list::ConfigOption;
 use crossterm::event::{Event, KeyCode};
 
 use ratatui::{layout::Rect, widgets::Widget, Frame};
@@ -15,6 +17,8 @@ pub enum Action {
     Return(String),
     ReturnWithKey(KeyCode),
     ReturnInstance(InstanceInfo),
+    ReturnConfig(ConfigOption),
+    OpenConfig,
     PartialReturn(String),
     Search,
     ToggleInfoPanel,

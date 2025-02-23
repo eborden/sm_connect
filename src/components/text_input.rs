@@ -25,6 +25,14 @@ impl Default for TextInput {
 }
 
 impl TextInput {
+    pub fn new(prompt: String) -> Self {
+        TextInput {
+            prompt,
+            search_input: "".into(),
+            search_cursor_position: 0,
+        }
+    }
+
     pub fn get_cursor_position(&self) -> usize {
         self.search_cursor_position + self.prompt.len()
     }
@@ -86,6 +94,11 @@ impl TextInput {
     pub fn get_value(&self) -> String {
         self.search_input.clone()
     }
+
+    pub fn set_value(&mut self, value: String) {
+        self.search_cursor_position = value.len();
+        self.search_input = value;
+    }
 }
 
 impl HandleAction for TextInput {
@@ -132,7 +145,7 @@ impl HandleAction for TextInput {
 #[allow(refining_impl_trait)]
 impl View for TextInput {
     fn get_widget(&self) -> Paragraph {
-        let text: String = format!("Searching: {}", self.search_input);
+        let text: String = format!("{}{}", self.prompt, self.search_input);
         Paragraph::new(Text::from(text))
     }
 }
