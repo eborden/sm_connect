@@ -14,9 +14,9 @@ pub enum ConfigOption {
     SetRecentTimeout,
 }
 
-impl Into<String> for ConfigOption {
-    fn into(self) -> String {
-        match self {
+impl From<ConfigOption> for String {
+    fn from(option: ConfigOption) -> String {
+        match option {
             ConfigOption::ResetRecent => "Reset Recent Instances".to_string(),
             ConfigOption::SetRecentTimeout => "Set Recent Timeout".to_string(),
         }
