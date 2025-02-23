@@ -156,12 +156,4 @@ impl Config {
             }
         }
     }
-
-    pub fn get_recent_timeout(&self) -> u64 {
-        self.internal
-            .get("history", "recent_timeout")
-            .unwrap_or("86400".to_string())
-            .parse()
-            .unwrap_or(86400)
-    }
 }
