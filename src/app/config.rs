@@ -107,10 +107,6 @@ impl Config {
         Ok(home_dir.join(".sm_connect.json"))
     }
 
-    fn get_default_regions() -> Vec<String> {
-        DEFAULT_REGIONS.iter().map(|s| s.to_string()).collect()
-    }
-
     pub fn get_visible_regions(&self) -> Vec<String> {
         self.regions
             .iter()
@@ -147,25 +143,25 @@ impl Config {
         }
         self.persist()
     }
-
+    #[allow(dead_code)]
     pub fn unset_favorite_region(&mut self, region: String) -> Result<()> {
         if let Some(region) = self.regions.get_mut(&region) {
             region.favorite = false;
         }
         self.persist()
     }
-
+    #[allow(dead_code)]
     pub fn favorite_region(&mut self, region: String) -> Result<()> {
         if let Some(region) = self.regions.get_mut(&region) {
             region.favorite = true;
         }
         self.persist()
     }
-    
+    #[allow(dead_code)]
     pub fn get_recent_timeout(&self) -> u64 {
         self.recent_timeout
     }
-
+    #[allow(dead_code)]
     pub fn set_recent_timeout(&mut self, timeout: u64) -> Result<()> {
         self.recent_timeout = timeout;
         self.persist()
