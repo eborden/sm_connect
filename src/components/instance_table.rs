@@ -54,13 +54,13 @@ impl InstanceTable {
     fn sort_instances(&mut self) {
         self.visible_items.sort_by(|a, b| {
             if self.recent_first{
-                let is_a_recent = a.is_recent();
-                let is_b_recent = b.is_recent();
-                if is_a_recent && !is_b_recent {
-                    return std::cmp::Ordering::Less;
-                }
-                if !is_a_recent && is_b_recent {
-                    return std::cmp::Ordering::Greater;
+                let a_last_access = a.get_last_access();
+                let b_last_access = b.get_last_access();
+                match (a_last_access,b_last_access) {
+                    (None, None) => {},
+                    (None, Some(_)) => return std::cmp::Ordering::Greater,
+                    (Some(_), None) => return std::cmp::Ordering::Less,
+                    (Some(a_time), Some(b_time)) => return b_time.cmp(&a_time),
                 }
             }
             a.get_name()

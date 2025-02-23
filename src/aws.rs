@@ -13,7 +13,7 @@ use crate::history::{get_current_time, History};
 pub struct InstanceInfo {
     region: Region,
     raw_instance_data: Instance,
-    last_accessed: Option<u64>,
+    last_access: Option<u64>,
 }
 
 impl InstanceInfo {
@@ -101,13 +101,17 @@ impl InstanceInfo {
     }
 
     pub fn is_recent(&self) -> bool {
-        match self.last_accessed {
+        match self.last_access {
             None => false,
             Some(time) => {
                 let now = get_current_time();
                 now - time < 60 * 60 * 24 * 7 //TODO: make this configurable
             }
         }
+    }
+
+    pub fn get_last_access(&self) -> Option<u64> {
+        self.last_access
     }
 }
 
@@ -139,7 +143,7 @@ pub async fn fetch_instances(region: Region) -> Result<Vec<InstanceInfo>> {
             InstanceInfo {
                 region: region.clone(),
                 raw_instance_data: cloned,
-                last_accessed,
+                last_access: last_accessed,
             }
         })
         .collect();
