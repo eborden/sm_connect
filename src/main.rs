@@ -6,6 +6,8 @@ mod app;
 use app::App;
 use std::process::Command;
 mod components;
+mod history;
+use history::{History, HistoryEntry};
 
 use anyhow::{Context, Result};
 use signal_hook::{consts::signal::*, iterator::Signals};
@@ -32,6 +34,8 @@ async fn main() -> Result<()> {
 fn connect(instance: InstanceInfo) {
     // Run the AWS command
     // If fails, run SSH
+    let entry = HistoryEntry::new(instance.get_instance_id());
+    History::save(entry).unwrap();
     let mut child = Command::new("aws")
         .args([
             "--region",
