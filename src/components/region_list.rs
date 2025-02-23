@@ -157,17 +157,23 @@ impl Render for RegionList {
 
 impl RenderHelp for RegionList {
     fn render_help(&mut self, frame: &mut Frame, area: Rect) {
-        let rows = vec![Row::new(vec![
-            Cell::from(Span::styled("'q' Exit", Style::default().fg(Color::White))),
-            Cell::from(Span::styled("'h' Hide", Style::default().fg(Color::White))),
-            Cell::from(Span::styled(
-                "'r' Reset regions",
-                Style::default().fg(Color::White),
-            )),
-            Cell::from(Span::styled(
-                "'*' Toggle Favorite",
-                Style::default().fg(Color::White),
-            )),
+        let rows = vec![
+            Row::new(vec![
+                Cell::from(Span::styled("'q' Exit", Style::default().fg(Color::White))),
+                Cell::from(Span::styled("'h' Hide", Style::default().fg(Color::White))),
+                Cell::from(Span::styled(
+                    "'r' Reset regions",
+                    Style::default().fg(Color::White),
+                ))]),
+            Row::new(vec![
+                Cell::from(Span::styled(
+                    "'*' Toggle Favorite",
+                    Style::default().fg(Color::White),
+                )),
+                Cell::from(Span::styled(
+                    "'c' to open configuration",
+                    Style::default().fg(Color::White),
+                )),
         ])];
         let table = Table::new(
             rows,
