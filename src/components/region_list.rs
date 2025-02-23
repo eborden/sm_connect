@@ -92,6 +92,7 @@ impl HandleAction for RegionList {
                 KeyCode::Char('q') => Action::Exit,
                 KeyCode::Char('h') => Action::Hide(self.current().unwrap()),
                 KeyCode::Char('r') => Action::Reset,
+                KeyCode::Char('c') => Action::OpenConfig,
                 KeyCode::Char('*') => Action::ToggleFavorite(self.current().unwrap()),
                 KeyCode::Down => {
                     self.next();

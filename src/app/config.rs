@@ -14,7 +14,7 @@ struct RegionConfig{
 // https://github.com/rust-lang/rust/issues/120301
 const DEFAULT_RECENT_TIMEOUT: u64 = 60 * 60 * 24 * 7; 
 #[derive(Debug, Serialize, Deserialize)]
-pub(super) struct Config {
+pub struct Config {
     recent_timeout: u64,
     regions: HashMap<String, RegionConfig>,
 }

@@ -86,6 +86,12 @@ impl History {
         Ok(())
     }
 
+    pub fn reset() -> Result<()> {
+        let entries = HashMap::new();
+        Self::write(&entries)?;
+        Ok(())
+    }
+
     fn get_history_path() -> Result<PathBuf> {
         let Some(home_dir) = home_dir() else {
             return Result::Err(anyhow::anyhow!("Could not find home directory"));

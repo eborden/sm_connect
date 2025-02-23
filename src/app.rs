@@ -1,5 +1,7 @@
 use crate::aws::fetch_instances;
 use crate::aws::InstanceInfo;
+use crate::components::config_panel::config_list::ConfigOption;
+use crate::components::config_panel::ConfigPanel;
 use crate::components::instance_details::InstanceDetails;
 use crate::components::region_list::RegionList;
 use crate::components::{Action, HandleAction, Render};
@@ -7,22 +9,26 @@ use crate::components::{Action, HandleAction, Render};
 use crate::components::instance_selection::InstanceSelection;
 
 use aws_config::Region;
+use config::Config;
 use crossterm::event::{self};
 
 use ratatui::style::Style;
 use ratatui::{prelude::*, widgets::*};
 
 use std::io::Stdout;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 use anyhow::Result;
 use thiserror::Error;
 
-mod config;
+pub mod config;
 
 #[derive(Debug, Clone)]
 pub enum AppStatus {
     RegionSelectState,
     MainScreen,
+    ConfigPanelState,
 }
 
 #[derive(Error, Debug)]
@@ -33,7 +39,8 @@ pub enum RuntimeError {
 
 #[derive(Debug)]
 pub struct App {
-    config: config::Config,
+    config: Arc<Mutex<config::Config>>,
+    config_panel: ConfigPanel,
     region_select_component: RegionList,
     status: AppStatus,
     info_panel_component: InstanceDetails,
@@ -43,10 +50,15 @@ pub struct App {
 impl App {
     pub fn new() -> Result<Self> {
         let config = config::Config::new()?;
-        let mut region_select = RegionList::with_items(config.get_visible_regions());
-        region_select.set_favorites(config.get_favorite_regions());
+        let config = Arc::new(Mutex::new(config));
+        let config_panel = ConfigPanel::new(config.clone());
+        let unlocked = config.lock().unwrap();
+        let mut region_select = RegionList::with_items(unlocked.get_visible_regions());
+        region_select.set_favorites(unlocked.get_favorite_regions());
+        drop(unlocked);
         Ok(App {
-            config: config,
+            config,
+            config_panel,
             region_select_component: region_select,
             status: AppStatus::RegionSelectState,
             info_panel_component: InstanceDetails::default(),
@@ -72,6 +84,9 @@ impl App {
                         }
                         AppStatus::MainScreen => {
                             self.instance_selection_component.render(frame, render_area);
+                        },
+                        AppStatus::ConfigPanelState => {
+                            self.config_panel.render(frame, render_area);
                         }
                     }
                 }
@@ -82,7 +97,6 @@ impl App {
             match self.status {
                 AppStatus::RegionSelectState => {
                     let action = self.region_select_component.handle_action(event);
-                    // TODO: Move config management to be owned by the component
                     match action {
                         Action::Exit => {
                             should_exit = true;
@@ -94,19 +108,25 @@ impl App {
                             
                         }
                         Action::Hide(region) => {
-                            self.config.hide_region(region)?;
+                            let mut config = self.config.lock().unwrap();
+                            config.hide_region(region)?;
                             self.region_select_component
-                                .update_items(self.config.get_visible_regions());
+                                .update_items(config.get_visible_regions());
                         }
                         Action::Reset => {
-                            self.config.reset_hidden_regions()?;
+                            let mut config = self.config.lock().unwrap();
+                            config.reset_hidden_regions()?;
                             self.region_select_component
-                                .update_items(self.config.get_visible_regions());
+                                .update_items(config.get_visible_regions());
                         }
                         Action::ToggleFavorite(region) => {
-                            self.config.toggle_favorite_region(region)?;
+                            let mut config = self.config.lock().unwrap();
+                            config.toggle_favorite_region(region)?;
                             self.region_select_component
-                                .set_favorites(self.config.get_favorite_regions());
+                                .set_favorites(config.get_favorite_regions());
+                        }
+                        Action::OpenConfig => {
+                            self.status = AppStatus::ConfigPanelState;
                         }
                         _ => {}
                     }
@@ -127,6 +147,15 @@ impl App {
                         _ => {}
                     }
                     
+                }
+                AppStatus::ConfigPanelState => {
+                    let action = self.config_panel.handle_action(event);
+                    match action {
+                        Action::Exit => {
+                            self.status = AppStatus::RegionSelectState;
+                        }
+                        _ => {}
+                    }
                 }
             }
 
@@ -162,8 +191,9 @@ impl App {
             .style(Style::default().white())
             .highlight_style(Style::default().yellow())
             .select(match self.status {
-                AppStatus::RegionSelectState => 0,
-                AppStatus::MainScreen => 1,
+                AppStatus::RegionSelectState => Some(0),
+                AppStatus::MainScreen => Some(1),
+                _ => None, 
             });
         frame.render_widget(tabs, outer[0]);
         outer[1]
