@@ -12,6 +12,7 @@ pub struct InstanceTable {
     items: Vec<InstanceInfo>,
     visible_items: Vec<InstanceInfo>,
     filter: String,
+    recent_first: bool,
 }
 
 impl InstanceTable {
@@ -23,6 +24,7 @@ impl InstanceTable {
             items: items.clone(),
             visible_items: items.clone(),
             filter: String::default(),
+            recent_first: false
         }
     }
 
@@ -45,7 +47,25 @@ impl InstanceTable {
                     .contains(&self.filter.to_lowercase())
             })
             .cloned()
-            .collect()
+            .collect();
+        self.sort_instances();
+    }
+
+    fn sort_instances(&mut self) {
+        self.visible_items.sort_by(|a, b| {
+            if self.recent_first{
+                let is_a_recent = a.is_recent();
+                let is_b_recent = b.is_recent();
+                if is_a_recent && !is_b_recent {
+                    return std::cmp::Ordering::Less;
+                }
+                if !is_a_recent && is_b_recent {
+                    return std::cmp::Ordering::Greater;
+                }
+            }
+            a.get_name()
+                .cmp(&b.get_name())
+        });
     }
 
     pub fn next(&mut self) {
@@ -113,6 +133,11 @@ impl HandleAction for InstanceTable {
                 KeyCode::Right | KeyCode::Enter => self.perform_key_action(Some("accessItem")),
                 KeyCode::Char('/') => Action::Search,
                 KeyCode::Char('i') => Action::ToggleInfoPanel,
+                KeyCode::Char('r') => {
+                    self.recent_first = !self.recent_first;
+                    self.sort_instances();
+                    Action::Noop
+                },
                 _ => Action::Noop,
             },
             _ => Action::Noop,
@@ -134,7 +159,12 @@ impl View for InstanceTable {
                     Cell::from(i.get_private_ip()),
                     Cell::from(i.get_public_ip()),
                 ])
-                .style(Style::default())
+                .style(
+                    if self.recent_first && i.is_recent(){
+                        Style::default().fg(Color::Yellow)
+                    } else {
+                        Style::default()
+                    })
                 .height(1)
             })
             .collect();
@@ -182,10 +212,15 @@ impl RenderHelp for InstanceTable {
                 "'i' Info Panel",
                 Style::default().fg(Color::White),
             )),
+            Cell::from(Span::styled(
+                "'r' Show Recent First",
+                Style::default().fg(Color::White),
+            )),
         ])];
         let table = Table::new(
             rows,
             vec![
+                Constraint::Min(10),
                 Constraint::Min(10),
                 Constraint::Min(10),
                 Constraint::Min(10),

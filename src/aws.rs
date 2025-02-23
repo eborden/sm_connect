@@ -7,10 +7,13 @@ use aws_sdk_ec2::{
     Client,
 };
 
+use crate::history::{get_current_time, History};
+
 #[derive(Debug, Clone)]
 pub struct InstanceInfo {
     region: Region,
     raw_instance_data: Instance,
+    last_accessed: Option<u64>,
 }
 
 impl InstanceInfo {
@@ -96,6 +99,16 @@ impl InstanceInfo {
             .map(|sg| sg.group_name.clone().unwrap_or_default())
             .collect()
     }
+
+    pub fn is_recent(&self) -> bool {
+        match self.last_accessed {
+            None => false,
+            Some(time) => {
+                let now = get_current_time();
+                now - time < 60 * 60 * 24 * 7 //TODO: make this configurable
+            }
+        }
+    }
 }
 
 pub async fn fetch_instances(region: Region) -> Result<Vec<InstanceInfo>> {
@@ -115,14 +128,18 @@ pub async fn fetch_instances(region: Region) -> Result<Vec<InstanceInfo>> {
         .await?;
 
     let binding = result.reservations.unwrap();
+    let recents = History::read()?;
     let instances: Vec<InstanceInfo> = binding
         .iter()
         .flat_map(|reservation| reservation.instances.clone().unwrap())
         .map(|instance: Instance| {
             let cloned = instance.clone();
+            let last_accessed = recents.get(&instance.instance_id.clone().unwrap_or_default())
+                .map(|entry| entry.get_when());
             InstanceInfo {
                 region: region.clone(),
                 raw_instance_data: cloned,
+                last_accessed,
             }
         })
         .collect();

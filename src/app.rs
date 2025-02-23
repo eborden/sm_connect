@@ -5,6 +5,7 @@ use crate::components::region_list::RegionList;
 use crate::components::{Action, HandleAction, Render};
 
 use crate::components::instance_selection::InstanceSelection;
+use crate::history::History;
 
 use aws_config::Region;
 use crossterm::event::{self};
@@ -82,15 +83,14 @@ impl App {
             match self.status {
                 AppStatus::RegionSelectState => {
                     let action = self.region_select_component.handle_action(event);
+                    // TODO: Move config management to be owned by the component
                     match action {
                         Action::Exit => {
                             should_exit = true;
                         }
                         Action::Return(region) => {
                             self.status = AppStatus::MainScreen;
-                            let mut instances = fetch_instances(Region::new(region)).await?;
-                            instances
-                                .sort_by_key(|instance_info| instance_info.get_name().to_owned());
+                            let instances = fetch_instances(Region::new(region)).await?;
                             self.instance_selection_component.update_instances(instances);
                             
                         }
