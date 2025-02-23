@@ -1,11 +1,20 @@
 use std::sync::{Arc, Mutex};
 
+use crate::{
+    app::config::Config,
+    aws::InstanceInfo,
+    components::{instance_table::InstanceTable, text_input::TextInput},
+    history::History,
+};
 use config_list::{ConfigList, ConfigOption};
 use crossterm::event;
 use ratatui::{
-    layout::{Constraint, Direction, Layout, Rect}, style::{Color, Modifier, Style, Stylize}, text::{Line, Span}, widgets::{Block, Borders, Cell, List, ListItem, ListState, Row, Table}, Frame
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, Style, Stylize},
+    text::{Line, Span},
+    widgets::{Block, Borders, Cell, List, ListItem, ListState, Row, Table},
+    Frame,
 };
-use crate::{app::config::Config, aws::InstanceInfo, components::{instance_table::InstanceTable, text_input::TextInput}, history::History};
 
 use super::{instance_details::InstanceDetails, Action, HandleAction, Render, RenderHelp};
 pub mod config_list;
@@ -30,14 +39,14 @@ impl ConfigPanel {
             input_component,
             input_active: false,
             modifying_action: None,
-            last_operation_success: None
+            last_operation_success: None,
         }
     }
 }
 
 impl HandleAction for ConfigPanel {
     fn handle_action(&mut self, action: crossterm::event::Event) -> Action {
-        if self.input_active{
+        if self.input_active {
             let action = self.input_component.handle_action(action);
             match action {
                 Action::Exit => {
@@ -47,9 +56,13 @@ impl HandleAction for ConfigPanel {
                     match self.modifying_action {
                         Some(ConfigOption::SetRecentTimeout) => {
                             if let Ok(timeout) = search.parse::<u64>() {
-                                self.config.lock().unwrap().set_recent_timeout(timeout).unwrap();
+                                self.config
+                                    .lock()
+                                    .unwrap()
+                                    .set_recent_timeout(timeout)
+                                    .unwrap();
                                 self.last_operation_success = Some(true);
-                            }else {
+                            } else {
                                 self.last_operation_success = Some(false);
                             }
                         }
@@ -60,22 +73,20 @@ impl HandleAction for ConfigPanel {
                 _ => {}
             }
             Action::Noop
-        }else {
+        } else {
             let action = self.config_list.handle_action(action);
             match action {
                 Action::ReturnConfig(config) => {
                     match config {
-                        ConfigOption::ResetRecent => {
-                            match History::reset() {
-                                Ok(_) => {
-                                    self.last_operation_success = Some(true);
-                                }
-                                Err(e) => {
-                                    eprintln!("Error resetting history: {:?}", e);
-                                    self.last_operation_success = Some(false);
-                                }
+                        ConfigOption::ResetRecent => match History::reset() {
+                            Ok(_) => {
+                                self.last_operation_success = Some(true);
                             }
-                        }
+                            Err(e) => {
+                                eprintln!("Error resetting history: {:?}", e);
+                                self.last_operation_success = Some(false);
+                            }
+                        },
                         ConfigOption::SetRecentTimeout => {
                             self.modifying_action = Some(ConfigOption::SetRecentTimeout);
                             self.input_active = true;
@@ -84,8 +95,8 @@ impl HandleAction for ConfigPanel {
                         }
                     }
                     Action::Noop
-                },
-                other => other
+                }
+                other => other,
             }
         }
     }
@@ -100,18 +111,16 @@ impl Render for ConfigPanel {
         self.config_list.render(frame, vertical_layout[0]);
         if self.input_active {
             self.input_component.render(frame, vertical_layout[1]);
-            frame.set_cursor_position(
-                (vertical_layout[1].x
-                    + self.input_component.get_cursor_position() as u16,
-                    vertical_layout[1].y)
-            );
+            frame.set_cursor_position((
+                vertical_layout[1].x + self.input_component.get_cursor_position() as u16,
+                vertical_layout[1].y,
+            ));
         } else {
             self.render_help(frame, vertical_layout[1]);
             if self.last_operation_success.is_some() {
                 // Show success message
                 self.last_operation_success = None;
             }
-
         }
     }
 }
@@ -120,7 +129,9 @@ impl RenderHelp for ConfigPanel {
     fn render_help(&mut self, frame: &mut Frame, area: Rect) {
         match self.last_operation_success {
             Some(true) => {
-                let line = Line::from("Operation successful").centered().bg(Color::Green);
+                let line = Line::from("Operation successful")
+                    .centered()
+                    .bg(Color::Green);
                 frame.render_widget(line, area);
             }
             Some(false) => {

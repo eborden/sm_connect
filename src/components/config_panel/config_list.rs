@@ -1,10 +1,14 @@
-use crossterm::event::{Event, KeyCode};
 use crate::components::{Action, HandleAction, Render, RenderHelp, View};
+use crossterm::event::{Event, KeyCode};
 use ratatui::{
-    layout::{Constraint, Direction, Layout, Rect}, style::{Color, Modifier, Style}, text::Span, widgets::{Block, Borders, Cell, List, ListItem, ListState, Row, Table}, Frame
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, Style},
+    text::Span,
+    widgets::{Block, Borders, Cell, List, ListItem, ListState, Row, Table},
+    Frame,
 };
 
-#[derive(Debug, Clone,Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum ConfigOption {
     ResetRecent,
     SetRecentTimeout,
@@ -19,21 +23,18 @@ impl Into<String> for ConfigOption {
     }
 }
 
-
-const CONFIG_OPTIONS: [ConfigOption; 2] = [ConfigOption::ResetRecent, ConfigOption::SetRecentTimeout];
+const CONFIG_OPTIONS: [ConfigOption; 2] =
+    [ConfigOption::ResetRecent, ConfigOption::SetRecentTimeout];
 #[derive(Debug)]
 pub struct ConfigList {
     state: ListState,
 }
 
-
 impl ConfigList {
     pub fn new() -> ConfigList {
         let mut state = ListState::default();
         state.select(Some(0));
-        ConfigList {
-            state,
-        }
+        ConfigList { state }
     }
 
     fn next(&mut self) {
@@ -119,10 +120,10 @@ impl View for ConfigList {
 impl Render for ConfigList {
     fn render(&mut self, frame: &mut Frame, area: Rect) {
         let vertical_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(vec![Constraint::Percentage(100)])
-        .split(area);
-        
+            .direction(Direction::Vertical)
+            .constraints(vec![Constraint::Percentage(100)])
+            .split(area);
+
         let widget = self.get_widget();
         frame.render_stateful_widget(widget, vertical_layout[0], &mut self.state.clone());
     }
@@ -130,18 +131,11 @@ impl Render for ConfigList {
 
 impl RenderHelp for ConfigList {
     fn render_help(&mut self, frame: &mut Frame, area: Rect) {
-        let rows = vec![Row::new(vec![
-            Cell::from(Span::styled(
-                "'q' Exit",
-                Style::default().fg(Color::White),
-            )),
-        ])];
-        let table = Table::new(
-            rows,
-            vec![
-                Constraint::Min(10),
-            ],
-        );
+        let rows = vec![Row::new(vec![Cell::from(Span::styled(
+            "'q' Exit",
+            Style::default().fg(Color::White),
+        ))])];
+        let table = Table::new(rows, vec![Constraint::Min(10)]);
         frame.render_widget(table, area);
     }
 }

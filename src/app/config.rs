@@ -1,18 +1,22 @@
 use anyhow::Result;
 use home::home_dir;
-use std::{collections::HashMap, io::{Read, Write}, path::PathBuf};
+use serde::{Deserialize, Serialize};
 use serde_json::{from_str, to_string_pretty as to_string};
-use serde::{Serialize, Deserialize};
+use std::{
+    collections::HashMap,
+    io::{Read, Write},
+    path::PathBuf,
+};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
-struct RegionConfig{
+struct RegionConfig {
     hidden: bool,
-    favorite: bool
+    favorite: bool,
 }
 
 // when it becomes stable as const , switch to Duration::from_days(7).as_secs();
 // https://github.com/rust-lang/rust/issues/120301
-const DEFAULT_RECENT_TIMEOUT: u64 = 60 * 60 * 24 * 7; 
+const DEFAULT_RECENT_TIMEOUT: u64 = 60 * 60 * 24 * 7;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     recent_timeout: u64,
@@ -66,9 +70,9 @@ const DEFAULT_REGIONS: &[&str] = &[
 
 impl Config {
     pub fn new() -> Result<Config> {
-       let config_path = Config::get_config_path()?;
+        let config_path = Config::get_config_path()?;
 
-       let mut file = std::fs::OpenOptions::new()
+        let mut file = std::fs::OpenOptions::new()
             .create(true)
             .truncate(false)
             .read(true)
@@ -83,10 +87,9 @@ impl Config {
                 let config = Config::default();
                 config.persist()?;
                 config
-            },
+            }
         };
         Ok(config)
-
     }
 
     pub fn persist(&self) -> Result<()> {

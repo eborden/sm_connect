@@ -1,9 +1,9 @@
+pub mod config_panel;
 pub mod instance_details;
-pub mod instance_table;
 pub mod instance_selection;
+pub mod instance_table;
 pub mod region_list;
 pub mod text_input;
-pub mod config_panel;
 use config_panel::config_list::ConfigOption;
 use crossterm::event::{Event, KeyCode};
 

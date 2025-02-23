@@ -25,7 +25,6 @@ impl Default for TextInput {
 }
 
 impl TextInput {
-
     pub fn new(prompt: String) -> Self {
         TextInput {
             prompt,

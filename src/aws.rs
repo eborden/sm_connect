@@ -128,7 +128,8 @@ pub async fn fetch_instances(region: Region) -> Result<Vec<InstanceInfo>> {
         .flat_map(|reservation| reservation.instances.clone().unwrap())
         .map(|instance: Instance| {
             let cloned = instance.clone();
-            let last_accessed = recents.get(&instance.instance_id.clone().unwrap_or_default())
+            let last_accessed = recents
+                .get(&instance.instance_id.clone().unwrap_or_default())
                 .map(|entry| entry.get_when());
             InstanceInfo {
                 region: region.clone(),

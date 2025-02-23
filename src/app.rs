@@ -74,7 +74,8 @@ impl App {
         let mut return_value: Option<InstanceInfo> = None;
         loop {
             // render
-            terminal.draw(|frame| {
+            terminal
+                .draw(|frame| {
                     // Set global layout
                     let render_area = self.get_component_render_area(frame);
 
@@ -84,13 +85,13 @@ impl App {
                         }
                         AppStatus::MainScreen => {
                             self.instance_selection_component.render(frame, render_area);
-                        },
+                        }
                         AppStatus::ConfigPanelState => {
                             self.config_panel.render(frame, render_area);
                         }
                     }
-                }
-            ).unwrap();
+                })
+                .unwrap();
 
             // handle events
             let event = event::read().unwrap();
@@ -104,8 +105,8 @@ impl App {
                         Action::Return(region) => {
                             self.status = AppStatus::MainScreen;
                             let instances = fetch_instances(Region::new(region)).await?;
-                            self.instance_selection_component.update_instances(instances);
-                            
+                            self.instance_selection_component
+                                .update_instances(instances);
                         }
                         Action::Hide(region) => {
                             let mut config = self.config.lock().unwrap();
@@ -146,7 +147,6 @@ impl App {
                         }
                         _ => {}
                     }
-                    
                 }
                 AppStatus::ConfigPanelState => {
                     let action = self.config_panel.handle_action(event);
@@ -169,22 +169,15 @@ impl App {
         }
     }
 
-    
     /**
      * Creates the app layout and returns the area for components to render themselves
      */
     fn get_component_render_area(&self, frame: &mut Frame) -> Rect {
         let outer = Layout::default()
-        .direction(Direction::Vertical)
-        .margin(0)
-        .constraints(
-            [
-                Constraint::Percentage(10),
-                Constraint::Percentage(90),
-            ]
-            .as_ref(),
-        )
-        .split(frame.area());
+            .direction(Direction::Vertical)
+            .margin(0)
+            .constraints([Constraint::Percentage(10), Constraint::Percentage(90)].as_ref())
+            .split(frame.area());
 
         let tabs = Tabs::new(vec!["Region", "Instances", "Connection"])
             .block(Block::bordered())
@@ -193,7 +186,7 @@ impl App {
             .select(match self.status {
                 AppStatus::RegionSelectState => Some(0),
                 AppStatus::MainScreen => Some(1),
-                _ => None, 
+                _ => None,
             });
         frame.render_widget(tabs, outer[0]);
         outer[1]

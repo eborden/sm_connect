@@ -1,30 +1,33 @@
-use std::{collections::HashMap, io::BufRead, path::PathBuf};
 use anyhow::Result;
 use home::home_dir;
-use std::io::Write;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use serde_json::{from_str, to_string};
+use std::io::Write;
 use std::time::SystemTime;
+use std::{collections::HashMap, io::BufRead, path::PathBuf};
 
-const RECENT_TIMEOUT: u64 = 60*60*24*30;
+const RECENT_TIMEOUT: u64 = 60 * 60 * 24 * 30;
 
-pub fn get_current_time() -> u64{
-    SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs()
+pub fn get_current_time() -> u64 {
+    SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
 }
 
 pub struct History {}
 
-#[derive(Debug,Serialize,Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct HistoryEntry {
     instance_id: String,
-    when: u64
+    when: u64,
 }
 
 impl HistoryEntry {
     pub fn new(instance_id: String) -> HistoryEntry {
         HistoryEntry {
             instance_id,
-            when: get_current_time()
+            when: get_current_time(),
         }
     }
 
@@ -44,8 +47,8 @@ impl History {
         Self::write(&entries)
     }
 
-    pub fn read() -> Result<HashMap<String,HistoryEntry>> {
-        let mut entries  = HashMap::new();
+    pub fn read() -> Result<HashMap<String, HistoryEntry>> {
+        let mut entries = HashMap::new();
         let file = Self::get_history_path()?;
         let Ok(file) = std::fs::File::open(file) else {
             return Ok(entries);
@@ -72,7 +75,7 @@ impl History {
         Ok(entries)
     }
 
-    fn write(entries: &HashMap<String,HistoryEntry>) -> Result<()> {
+    fn write(entries: &HashMap<String, HistoryEntry>) -> Result<()> {
         let file = Self::get_history_path()?;
         let mut file = std::fs::OpenOptions::new()
             .create(true)

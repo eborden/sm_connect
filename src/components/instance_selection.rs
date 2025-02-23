@@ -1,10 +1,15 @@
 use crossterm::event;
-use ratatui::{layout::{Constraint, Direction, Layout, Rect}, Frame};
+use ratatui::{
+    layout::{Constraint, Direction, Layout, Rect},
+    Frame,
+};
 
-use crate::{aws::InstanceInfo, components::{instance_table::InstanceTable, text_input::TextInput}};
+use crate::{
+    aws::InstanceInfo,
+    components::{instance_table::InstanceTable, text_input::TextInput},
+};
 
 use super::{instance_details::InstanceDetails, Action, HandleAction, Render, RenderHelp};
-
 
 #[derive(Debug, Clone)]
 pub struct InstanceSelection {
@@ -37,7 +42,8 @@ impl InstanceSelection {
     }
 
     pub fn update_instances(&mut self, instances: Vec<InstanceInfo>) {
-        self.instances_table_component = InstanceTable::with_items_and_filter(instances, self.search_component.get_value());
+        self.instances_table_component =
+            InstanceTable::with_items_and_filter(instances, self.search_component.get_value());
         if let Some(instance) = self.instances_table_component.current() {
             self.instance_details.set_instance(instance);
         }
@@ -46,7 +52,7 @@ impl InstanceSelection {
 
 impl HandleAction for InstanceSelection {
     fn handle_action(&mut self, action: crossterm::event::Event) -> Action {
-        if self.search_active{
+        if self.search_active {
             let action = self.search_component.handle_action(action);
             match action {
                 Action::Exit => {
@@ -74,7 +80,7 @@ impl HandleAction for InstanceSelection {
                 _ => {}
             }
             Action::Noop
-        }else {
+        } else {
             let action = self.instances_table_component.handle_action(action);
             match action {
                 Action::Search => {
@@ -89,7 +95,7 @@ impl HandleAction for InstanceSelection {
                     self.instance_details.set_instance(item);
                     Action::Noop
                 }
-                other => other
+                other => other,
             }
         }
     }
@@ -103,25 +109,26 @@ impl Render for InstanceSelection {
             .split(area);
         if self.search_active {
             self.search_component.render(frame, vertical_layout[1]);
-            frame.set_cursor_position(
-                (vertical_layout[1].x
-                    + self.search_component.get_cursor_position() as u16,
-                    vertical_layout[1].y)
-            );
-        }else {
-            self.instances_table_component.render_help(frame, vertical_layout[1]);
+            frame.set_cursor_position((
+                vertical_layout[1].x + self.search_component.get_cursor_position() as u16,
+                vertical_layout[1].y,
+            ));
+        } else {
+            self.instances_table_component
+                .render_help(frame, vertical_layout[1]);
         }
-        
+
         if self.info_panel_enabled {
             let inner_layout = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints(vec![Constraint::Percentage(75), Constraint::Percentage(25)])
                 .split(area);
-            self.instances_table_component.render(frame, inner_layout[0]);
+            self.instances_table_component
+                .render(frame, inner_layout[0]);
             self.instance_details.render(frame, inner_layout[1]);
         } else {
-            self.instances_table_component.render(frame, vertical_layout[0]);
+            self.instances_table_component
+                .render(frame, vertical_layout[0]);
         }
-        
     }
 }

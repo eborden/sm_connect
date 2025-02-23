@@ -1,7 +1,11 @@
 use crate::aws::InstanceInfo;
 use crossterm::event::{Event, KeyCode};
 use ratatui::{
-    layout::{Constraint, Rect}, style::{Color, Modifier, Style, Stylize}, text::Span, widgets::{Block, Borders, Cell, Row, Table, TableState}, Frame
+    layout::{Constraint, Rect},
+    style::{Color, Modifier, Style, Stylize},
+    text::Span,
+    widgets::{Block, Borders, Cell, Row, Table, TableState},
+    Frame,
 };
 
 use super::{Action, HandleAction, Render, RenderHelp, View};
@@ -24,7 +28,7 @@ impl InstanceTable {
             items: items.clone(),
             visible_items: items.clone(),
             filter: String::default(),
-            recent_first: false
+            recent_first: false,
         }
     }
 
@@ -53,18 +57,17 @@ impl InstanceTable {
 
     fn sort_instances(&mut self) {
         self.visible_items.sort_by(|a, b| {
-            if self.recent_first{
+            if self.recent_first {
                 let a_last_access = a.get_last_access();
                 let b_last_access = b.get_last_access();
-                match (a_last_access,b_last_access) {
-                    (None, None) => {},
+                match (a_last_access, b_last_access) {
+                    (None, None) => {}
                     (None, Some(_)) => return std::cmp::Ordering::Greater,
                     (Some(_), None) => return std::cmp::Ordering::Less,
                     (Some(a_time), Some(b_time)) => return b_time.cmp(&a_time),
                 }
             }
-            a.get_name()
-                .cmp(&b.get_name())
+            a.get_name().cmp(&b.get_name())
         });
     }
 
@@ -137,7 +140,7 @@ impl HandleAction for InstanceTable {
                     self.recent_first = !self.recent_first;
                     self.sort_instances();
                     Action::Noop
-                },
+                }
                 _ => Action::Noop,
             },
             _ => Action::Noop,
@@ -159,12 +162,11 @@ impl View for InstanceTable {
                     Cell::from(i.get_private_ip()),
                     Cell::from(i.get_public_ip()),
                 ])
-                .style(
-                    if self.recent_first && i.get_last_access().is_some(){
-                        Style::default().fg(Color::Yellow)
-                    } else {
-                        Style::default()
-                    })
+                .style(if self.recent_first && i.get_last_access().is_some() {
+                    Style::default().fg(Color::Yellow)
+                } else {
+                    Style::default()
+                })
                 .height(1)
             })
             .collect();
@@ -204,10 +206,7 @@ impl RenderHelp for InstanceTable {
                 "'/' Search",
                 Style::default().fg(Color::White),
             )),
-            Cell::from(Span::styled(
-                "'q' Exit",
-                Style::default().fg(Color::White),
-            )),
+            Cell::from(Span::styled("'q' Exit", Style::default().fg(Color::White))),
             Cell::from(Span::styled(
                 "'i' Info Panel",
                 Style::default().fg(Color::White),
