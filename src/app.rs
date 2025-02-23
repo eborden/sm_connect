@@ -171,7 +171,7 @@ impl App {
         let outer = Layout::default()
             .direction(Direction::Vertical)
             .margin(0)
-            .constraints([Constraint::Percentage(10), Constraint::Percentage(90)].as_ref())
+            .constraints([Constraint::Max(3), Constraint::Fill(1)].as_ref())
             .split(frame.area());
 
         let tabs = Tabs::new(vec!["Region", "Instances", "Connection"])

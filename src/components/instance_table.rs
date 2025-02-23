@@ -40,7 +40,6 @@ impl InstanceTable {
 
     pub fn apply_filter(&mut self, filter: String) {
         self.filter = filter;
-        self.state.select(Some(0));
         self.visible_items = self
             .items
             .iter()
@@ -53,6 +52,8 @@ impl InstanceTable {
             .cloned()
             .collect();
         self.sort_instances();
+        self.state.select(if self.visible_items.len() != 0 {Some(0)} else {None});
+
     }
 
     fn sort_instances(&mut self) {
