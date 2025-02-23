@@ -70,6 +70,7 @@ impl Config {
 
        let mut file = std::fs::OpenOptions::new()
             .create(true)
+            .truncate(false)
             .read(true)
             .write(true)
             .open(config_path)?;

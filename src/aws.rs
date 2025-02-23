@@ -7,7 +7,7 @@ use aws_sdk_ec2::{
     Client,
 };
 
-use crate::history::{get_current_time, History};
+use crate::history::History;
 
 #[derive(Debug, Clone)]
 pub struct InstanceInfo {

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, hash::Hash, io::BufRead, path::PathBuf};
+use std::{collections::HashMap, io::BufRead, path::PathBuf};
 use anyhow::Result;
 use home::home_dir;
 use std::io::Write;

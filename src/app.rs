@@ -94,17 +94,17 @@ impl App {
                             
                         }
                         Action::Hide(region) => {
-                            self.config.hide_region(region);
+                            self.config.hide_region(region)?;
                             self.region_select_component
                                 .update_items(self.config.get_visible_regions());
                         }
                         Action::Reset => {
-                            self.config.reset_hidden_regions();
+                            self.config.reset_hidden_regions()?;
                             self.region_select_component
                                 .update_items(self.config.get_visible_regions());
                         }
                         Action::ToggleFavorite(region) => {
-                            self.config.toggle_favorite_region(region);
+                            self.config.toggle_favorite_region(region)?;
                             self.region_select_component
                                 .set_favorites(self.config.get_favorite_regions());
                         }
