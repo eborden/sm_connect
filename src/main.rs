@@ -15,7 +15,7 @@ use signal_hook::{consts::signal::*, iterator::Signals};
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut terminal = setup_terminal().context("setup failed")?;
-    let mut app = App::new();
+    let mut app = App::new()?;
     let selected = app.run(&mut terminal).await;
 
     restore_terminal(&mut terminal).context("restore terminal failed")?;

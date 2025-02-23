@@ -31,7 +31,7 @@ pub enum RuntimeError {
     UserExit,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct App {
     config: config::Config,
     region_select_component: RegionList,
@@ -41,17 +41,17 @@ pub struct App {
 }
 
 impl App {
-    pub fn new() -> Self {
-        let config = config::Config::new();
+    pub fn new() -> Result<Self> {
+        let config = config::Config::new()?;
         let mut region_select = RegionList::with_items(config.get_visible_regions());
         region_select.set_favorites(config.get_favorite_regions());
-        App {
-            config: config.clone(),
+        Ok(App {
+            config: config,
             region_select_component: region_select,
             status: AppStatus::RegionSelectState,
             info_panel_component: InstanceDetails::default(),
             instance_selection_component: InstanceSelection::default(),
-        }
+        })
     }
 
     pub async fn run(

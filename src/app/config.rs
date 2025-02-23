@@ -1,10 +1,35 @@
 use anyhow::Result;
-use configparser::ini::Ini;
 use home::home_dir;
-use std::path::PathBuf;
-#[derive(Default, Debug, Clone)]
+use std::{collections::HashMap, io::{Read, Write}, path::PathBuf};
+use serde_json::{from_str, to_string_pretty as to_string};
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct RegionConfig{
+    hidden: bool,
+    favorite: bool
+}
+
+// when it becomes stable as const , switch to Duration::from_days(7).as_secs();
+// https://github.com/rust-lang/rust/issues/120301
+const DEFAULT_RECENT_TIMEOUT: u64 = 60 * 60 * 24 * 7; 
+#[derive(Debug, Serialize, Deserialize)]
 pub(super) struct Config {
-    internal: Ini,
+    recent_timeout: u64,
+    regions: HashMap<String, RegionConfig>,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        let mut regions = HashMap::new();
+        for region in DEFAULT_REGIONS {
+            regions.insert(region.to_string(), RegionConfig::default());
+        }
+        Config {
+            regions,
+            recent_timeout: DEFAULT_RECENT_TIMEOUT,
+        }
+    }
 }
 
 const DEFAULT_REGIONS: &[&str] = &[
@@ -40,35 +65,45 @@ const DEFAULT_REGIONS: &[&str] = &[
 ];
 
 impl Config {
-    pub fn new() -> Config {
-        let Ok(config_path) = Config::get_config_path() else {
-            return Config {
-                internal: Ini::new(),
-            };
-        };
+    pub fn new() -> Result<Config> {
+       let config_path = Config::get_config_path()?;
 
-        if config_path.exists() {
-            let mut config = Ini::new();
-            config.load(config_path).unwrap();
-            Config { internal: config }
-        } else {
-            Config::default()
-        }
+       let mut file = std::fs::OpenOptions::new()
+            .create(true)
+            .read(true)
+            .write(true)
+            .open(config_path)?;
+
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)?;
+        let config = match from_str(&contents) {
+            Ok(config) => config,
+            Err(_) => {
+                let config = Config::default();
+                config.persist()?;
+                config
+            },
+        };
+        Ok(config)
+
     }
 
-    pub fn persist(&self) {
-        let Ok(config_path) = Config::get_config_path() else {
-            return;
-        };
-
-        self.internal.write(config_path).unwrap();
+    pub fn persist(&self) -> Result<()> {
+        let config_path = Config::get_config_path()?;
+        let mut file = std::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(config_path)?;
+        file.write_all(to_string(&self)?.as_bytes())?;
+        Ok(())
     }
 
     fn get_config_path() -> Result<PathBuf> {
         let Some(home_dir) = home_dir() else {
             return Result::Err(anyhow::anyhow!("Could not find home directory"));
         };
-        Ok(home_dir.join(".sm_connect"))
+        Ok(home_dir.join(".sm_connect.json"))
     }
 
     fn get_default_regions() -> Vec<String> {
@@ -76,84 +111,62 @@ impl Config {
     }
 
     pub fn get_visible_regions(&self) -> Vec<String> {
-        let Some(hidden_regions) = self.internal.get("regions", "hidden") else {
-            return Self::get_default_regions();
-        };
-        let hidden_regions: Vec<String> =
-            hidden_regions.split(",").map(|s| s.to_string()).collect();
-        Self::get_default_regions()
-            .into_iter()
-            .filter(|r| !hidden_regions.contains(r))
+        self.regions
+            .iter()
+            .filter(|(_, region)| !region.hidden)
+            .map(|(region, _)| region.to_string())
             .collect()
     }
 
-    pub fn hide_region(&mut self, region: String) {
-        match self.internal.get("regions", "hidden") {
-            Some(hidden_regions) => {
-                self.internal.set(
-                    "regions",
-                    "hidden",
-                    format!("{},{}", hidden_regions, region).into(),
-                );
-            }
-            None => {
-                self.internal.set("regions", "hidden", region.into());
-            }
+    pub fn hide_region(&mut self, region: String) -> Result<()> {
+        if let Some(region) = self.regions.get_mut(&region) {
+            region.hidden = true;
         }
-        self.persist();
+        self.persist()
     }
 
-    pub fn reset_hidden_regions(&mut self) {
-        self.internal
-            .set("regions", "hidden", "".to_string().into());
-        self.persist();
+    pub fn reset_hidden_regions(&mut self) -> Result<()> {
+        for region in self.regions.values_mut() {
+            region.hidden = false;
+        }
+        self.persist()
     }
 
     pub fn get_favorite_regions(&self) -> Vec<String> {
-        let Some(visible_regions) = self.internal.get("regions", "favorite") else {
-            return Vec::new();
-        };
-        visible_regions.split(",").map(|s| s.to_string()).collect()
+        self.regions
+            .iter()
+            .filter(|(_, region)| region.favorite)
+            .map(|(region, _)| region.to_string())
+            .collect()
     }
 
-    pub fn toggle_favorite_region(&mut self, region: String) {
-        let favorite_regions = self.get_favorite_regions();
-        if favorite_regions.contains(&region) {
-            self.unset_favorite_region(region)
-        } else {
-            self.favorite_region(region);
+    pub fn toggle_favorite_region(&mut self, region: String) -> Result<()> {
+        if let Some(region) = self.regions.get_mut(&region) {
+            region.favorite = !region.favorite;
         }
-        self.persist();
+        self.persist()
     }
 
-    pub fn unset_favorite_region(&mut self, region: String) {
-        let favorite_regions = self.get_favorite_regions();
-        if favorite_regions.contains(&region) {
-            let new_favs: Vec<String> = favorite_regions
-                .iter()
-                .filter(|r| r != &&region)
-                .map(|s| s.to_string())
-                .collect();
-            self.internal.set(
-                "regions",
-                "favorite",
-                new_favs.join(",").to_string().into(),
-            );
+    pub fn unset_favorite_region(&mut self, region: String) -> Result<()> {
+        if let Some(region) = self.regions.get_mut(&region) {
+            region.favorite = false;
         }
+        self.persist()
     }
 
-    pub fn favorite_region(&mut self, region: String) {
-        match self.internal.get("regions", "favorite") {
-            Some(favorite_regions) => {
-                self.internal.set(
-                    "regions",
-                    "favorite",
-                    format!("{},{}", favorite_regions, region).into(),
-                );
-            }
-            None => {
-                self.internal.set("regions", "favorite", region.into());
-            }
+    pub fn favorite_region(&mut self, region: String) -> Result<()> {
+        if let Some(region) = self.regions.get_mut(&region) {
+            region.favorite = true;
         }
+        self.persist()
+    }
+    
+    pub fn get_recent_timeout(&self) -> u64 {
+        self.recent_timeout
+    }
+
+    pub fn set_recent_timeout(&mut self, timeout: u64) -> Result<()> {
+        self.recent_timeout = timeout;
+        self.persist()
     }
 }
