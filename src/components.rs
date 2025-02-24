@@ -6,7 +6,7 @@ pub mod region_list;
 pub mod text_input;
 use config_panel::config_list::ConfigOption;
 use crossterm::event::{Event, KeyCode};
-
+use anyhow::Result;
 use ratatui::{layout::Rect, widgets::Widget, Frame};
 
 use crate::aws::InstanceInfo;
@@ -29,7 +29,7 @@ pub enum Action {
 }
 
 pub trait HandleAction {
-    fn handle_action(&mut self, action: Event) -> Action;
+    fn handle_action(&mut self, action: Event) -> Result<Action>;
 }
 
 trait View {

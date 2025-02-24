@@ -88,14 +88,13 @@ impl App {
                             self.config_panel.render(frame, render_area);
                         }
                     }
-                })
-                .unwrap();
+                })?;
 
             // handle events
-            let event = event::read().unwrap();
+            let event = event::read()?;
             match self.status {
                 AppStatus::RegionSelectState => {
-                    let action = self.region_select_component.handle_action(event);
+                    let action = self.region_select_component.handle_action(event)?;
                     match action {
                         Action::Exit => {
                             should_exit = true;
@@ -131,7 +130,7 @@ impl App {
                     }
                 }
                 AppStatus::MainScreen => {
-                    let action = self.instance_selection_component.handle_action(event);
+                    let action = self.instance_selection_component.handle_action(event)?;
                     match action {
                         Action::Exit => {
                             self.status = AppStatus::RegionSelectState;
@@ -147,7 +146,7 @@ impl App {
                     }
                 }
                 AppStatus::ConfigPanelState => {
-                    let action = self.config_panel.handle_action(event);
+                    let action = self.config_panel.handle_action(event)?;
                     if let Action::Exit = action {
                         self.status = AppStatus::RegionSelectState;
                     }

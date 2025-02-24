@@ -10,7 +10,7 @@ use crate::{
 };
 
 use super::{instance_details::InstanceDetails, Action, HandleAction, Render, RenderHelp};
-
+use anyhow::Result;
 #[derive(Debug, Clone)]
 pub struct InstanceSelection {
     instances_table_component: InstanceTable,
@@ -51,9 +51,9 @@ impl InstanceSelection {
 }
 
 impl HandleAction for InstanceSelection {
-    fn handle_action(&mut self, action: crossterm::event::Event) -> Action {
+    fn handle_action(&mut self, action: crossterm::event::Event) -> Result<Action> {
         if self.search_active {
-            let action = self.search_component.handle_action(action);
+            let action = self.search_component.handle_action(action)?;
             match action {
                 Action::Exit => {
                     self.search_active = false;
@@ -79,23 +79,23 @@ impl HandleAction for InstanceSelection {
                 }
                 _ => {}
             }
-            Action::Noop
+            Ok(Action::Noop)
         } else {
-            let action = self.instances_table_component.handle_action(action);
+            let action = self.instances_table_component.handle_action(action)?;
             match action {
                 Action::Search => {
                     self.search_active = true;
-                    Action::Noop
+                    Ok(Action::Noop)
                 }
                 Action::ToggleInfoPanel => {
                     self.info_panel_enabled = !self.info_panel_enabled;
-                    Action::Noop
+                    Ok(Action::Noop)
                 }
                 Action::Select(item) => {
                     self.instance_details.set_instance(item);
-                    Action::Noop
+                    Ok(Action::Noop)
                 }
-                other => other,
+                other => Ok(other),
             }
         }
     }

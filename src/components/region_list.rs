@@ -7,7 +7,7 @@ use ratatui::{
     widgets::{Block, Borders, Cell, List, ListItem, ListState, Row, Table},
     Frame,
 };
-
+use anyhow::Result;
 #[derive(Default, Debug, Clone)]
 pub struct RegionList {
     state: ListState,
@@ -87,8 +87,8 @@ impl RegionList {
 }
 
 impl HandleAction for RegionList {
-    fn handle_action(&mut self, action: Event) -> Action {
-        match action {
+    fn handle_action(&mut self, action: Event) -> Result<Action> {
+       let action =  match action {
             Event::Key(key) => match key.code {
                 KeyCode::Char('q') => Action::Exit,
                 KeyCode::Char('h') => Action::Hide(self.current().unwrap()),
@@ -110,7 +110,8 @@ impl HandleAction for RegionList {
                 _ => Action::Noop,
             },
             _ => Action::Noop,
-        }
+        };
+        Ok(action)
     }
 }
 

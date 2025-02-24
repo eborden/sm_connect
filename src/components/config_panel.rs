@@ -15,7 +15,7 @@ use ratatui::{
 
 use super::{Action, HandleAction, Render, RenderHelp};
 pub mod config_list;
-
+use anyhow::Result;
 #[derive(Debug)]
 pub struct ConfigPanel {
     config: Arc<Mutex<Config>>,
@@ -42,9 +42,9 @@ impl ConfigPanel {
 }
 
 impl HandleAction for ConfigPanel {
-    fn handle_action(&mut self, action: crossterm::event::Event) -> Action {
+    fn handle_action(&mut self, action: crossterm::event::Event) -> Result<Action> {
         if self.input_active {
-            let action = self.input_component.handle_action(action);
+            let action = self.input_component.handle_action(action)?;
             match action {
                 Action::Exit => {
                     self.input_active = false;
@@ -55,8 +55,7 @@ impl HandleAction for ConfigPanel {
                             self.config
                                 .lock()
                                 .unwrap()
-                                .set_recent_timeout(timeout)
-                                .unwrap();
+                                .set_recent_timeout(timeout)?;
                             self.last_operation_success = Some(true);
                         } else {
                             self.last_operation_success = Some(false);
@@ -66,9 +65,9 @@ impl HandleAction for ConfigPanel {
                 }
                 _ => {}
             }
-            Action::Noop
+            Ok(Action::Noop)
         } else {
-            let action = self.config_list.handle_action(action);
+            let action = self.config_list.handle_action(action)?;
             match action {
                 Action::ReturnConfig(config) => {
                     match config {
@@ -88,9 +87,9 @@ impl HandleAction for ConfigPanel {
                             self.input_component.set_value(current_value.to_string());
                         }
                     }
-                    Action::Noop
+                    Ok(Action::Noop)
                 }
-                other => other,
+                other => Ok(other),
             }
         }
     }

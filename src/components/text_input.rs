@@ -6,7 +6,7 @@ use ratatui::{text::Text, Frame};
 use crate::components::{Action, HandleAction, View};
 
 use super::Render;
-
+use anyhow::Result;
 #[derive(Debug, Clone)]
 pub struct TextInput {
     prompt: String,
@@ -102,8 +102,8 @@ impl TextInput {
 }
 
 impl HandleAction for TextInput {
-    fn handle_action(&mut self, action: Event) -> Action {
-        match action {
+    fn handle_action(&mut self, action: Event) -> Result<Action> {
+        let action = match action {
             Event::Key(key) => {
                 match key.code {
                     KeyCode::Char(c) => {
@@ -138,7 +138,8 @@ impl HandleAction for TextInput {
                 }
             }
             _ => Action::Noop,
-        }
+        };
+        Ok(action)
     }
 }
 
