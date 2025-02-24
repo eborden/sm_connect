@@ -9,7 +9,7 @@ use ratatui::{
 };
 
 use super::{Action, HandleAction, Render, RenderHelp, View};
-
+use anyhow::Result;
 #[derive(Debug, Clone)]
 pub struct InstanceTable {
     pub state: TableState,
@@ -128,8 +128,8 @@ impl InstanceTable {
 }
 
 impl HandleAction for InstanceTable {
-    fn handle_action(&mut self, action: Event) -> Action {
-        match action {
+    fn handle_action(&mut self, action: Event) -> Result<Action> {
+        let action = match action {
             Event::Key(key) => match key.code {
                 KeyCode::Char('q') => Action::Exit,
                 KeyCode::Down => self.perform_key_action(Some("nextItem")),
@@ -145,7 +145,8 @@ impl HandleAction for InstanceTable {
                 _ => Action::Noop,
             },
             _ => Action::Noop,
-        }
+        };
+        Ok(action)
     }
 }
 

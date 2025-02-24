@@ -80,10 +80,9 @@ impl History {
         let mut file = std::fs::OpenOptions::new()
             .create(true)
             .append(true)
-            .open(file)
-            .unwrap();
+            .open(file)?;
         for entry in entries.values() {
-            writeln!(file, "{}", to_string(entry).unwrap())?;
+            writeln!(file, "{}", to_string(entry)?)?;
         }
         file.flush()?;
         Ok(())

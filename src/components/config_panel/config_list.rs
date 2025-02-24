@@ -7,7 +7,7 @@ use ratatui::{
     widgets::{Block, Borders, Cell, List, ListItem, ListState, Row, Table},
     Frame,
 };
-
+use anyhow::Result;
 #[derive(Debug, Clone, Copy)]
 pub enum ConfigOption {
     ResetRecent,
@@ -71,25 +71,25 @@ impl ConfigList {
 }
 
 impl HandleAction for ConfigList {
-    fn handle_action(&mut self, action: Event) -> Action {
+    fn handle_action(&mut self, action: Event) -> Result<Action> {
         match action {
             Event::Key(key) => match key.code {
-                KeyCode::Char('q') => Action::Exit,
+                KeyCode::Char('q') => Ok(Action::Exit),
                 KeyCode::Down => {
                     self.next();
-                    Action::Noop
+                    Ok(Action::Noop)
                 }
                 KeyCode::Up => {
                     self.previous();
-                    Action::Noop
+                    Ok(Action::Noop)
                 }
                 KeyCode::Right | KeyCode::Enter => match self.current() {
-                    Some(option) => Action::ReturnConfig(option),
-                    None => Action::Noop,
+                    Some(option) => Ok(Action::ReturnConfig(option)),
+                    None => Ok(Action::Noop),
                 },
-                _ => Action::Noop,
+                _ => Ok(Action::Noop),
             },
-            _ => Action::Noop,
+            _ => Ok(Action::Noop),
         }
     }
 }

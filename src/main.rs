@@ -29,16 +29,16 @@ async fn main() -> Result<()> {
                 println!("{:?}", e);
             }
         },
-        Ok(instance) => connect(instance),
+        Ok(instance) => connect(instance)?,
     }
     Ok(())
 }
 
-fn connect(instance: InstanceInfo) {
+fn connect(instance: InstanceInfo) -> Result<()> {
     // Run the AWS command
     // If fails, run SSH
     let entry = HistoryEntry::new(instance.get_instance_id());
-    History::save(entry).unwrap();
+    History::save(entry)?;
     let mut child = Command::new("aws")
         .args([
             "--region",
@@ -48,19 +48,12 @@ fn connect(instance: InstanceInfo) {
             "--target",
             &instance.get_instance_id(),
         ])
-        .spawn()
-        .unwrap_or_else(|_| {
-            println!("failed to run aws ssm start-session. Falling back to SSH");
-            Command::new("ssh")
-                .args([instance.get_public_ip()])
-                .spawn()
-                .expect("Failed even with SSH")
-        });
+        .spawn()?;
 
     // Catch SIGINT signal and do nothing
     // So that actually ctrl+c works on the aws ssm session
-    // TODO: Handle ctrl+z too
-    let mut _signals = Signals::new([SIGINT]).unwrap();
+    let mut _signals = Signals::new([SIGINT,SIGTSTP])?;
 
-    child.wait().expect("failed to aws sm connect");
+    child.wait()?;
+    Ok(())
 }
