@@ -36,7 +36,6 @@ async fn main() -> Result<()> {
 
 fn connect(instance: InstanceInfo) -> Result<()> {
     // Run the AWS command
-    // If fails, run SSH
     let entry = HistoryEntry::new(instance.get_instance_id());
     History::save(entry)?;
     let mut child = Command::new("aws")
@@ -50,8 +49,8 @@ fn connect(instance: InstanceInfo) -> Result<()> {
         ])
         .spawn()?;
 
-    // Catch SIGINT signal and do nothing
-    // So that actually ctrl+c works on the aws ssm session
+    // Catch SIGINT, SIGSTP signal and do nothing
+    // So that actually ctrl+c / ctrl+z works on the aws ssm session instead of killing / stopping us
     let mut _signals = Signals::new([SIGINT,SIGTSTP])?;
 
     child.wait()?;
