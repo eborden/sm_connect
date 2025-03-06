@@ -16,7 +16,10 @@ jobs:
             os: ubuntu-latest
 
           - os_name: macOS-arm64
-            os: macOS-latest
+            os: macos-latest
+
+          - os_name: MacOS-x86_64
+            os: macos-13
 
 
     runs-on: ${{ matrix.platform.os }}
